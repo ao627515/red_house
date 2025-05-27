@@ -5,11 +5,11 @@ import path from 'path'
 export default defineConfig({
   // 1. root du projet — là où se trouve index.html
   //    Vite servira et résoudra les fichiers relatifs à ce dossier.
-  root: process.cwd(),
+  root: `${process.cwd()}/src`,
 
   // 2. publicDir — dossier des assets statiques (servis tels quels à la racine)
   //    public/main.js → accessible via /main.js
-  publicDir: path.resolve(__dirname, 'assets'),
+  publicDir: path.resolve(__dirname, 'public/assets'),
 
   // 3. resolve.alias — raccourcis pour éviter les chemins relatifs complexes
   resolve: {
@@ -21,7 +21,7 @@ export default defineConfig({
   server: {
     host: true,        // écoute sur 0.0.0.0, accessible depuis le LAN
     port: 5173,        // port de dev (modifiable en cas de conflit)
-    strictPort: true,  // échoue si 5173 est pris
+    strictPort: false,  // échoue si 5173 est pris
     open: true         // ouvre le navigateur automatiquement
   },
 
