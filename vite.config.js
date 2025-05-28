@@ -9,7 +9,7 @@ export default defineConfig({
 
   // 2. publicDir — dossier des assets statiques (servis tels quels à la racine)
   //    public/main.js → accessible via /main.js
-  publicDir: path.resolve(__dirname, 'public/assets'),
+  publicDir: path.resolve(__dirname, 'public'),
 
   // 3. resolve.alias — raccourcis pour éviter les chemins relatifs complexes
   resolve: {
