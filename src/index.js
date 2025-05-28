@@ -30,34 +30,14 @@ camera.position.set(0, 127, 0);
 scene.add(camera);
 
 // Controls
-const controls = new OrbitControls(camera, renderer.domElement);
-// const controls = new TrackballControls(camera, renderer.domElement);
-// controls.enableDamping = true;
-// const controls = new FirstPersonControls(camera, renderer.domElement);
-// const controls = new MapControls(camera, renderer.domElement);
-// const controls = new PointerLockControls(camera, renderer.domElement);
+const controls = new PointerLockControls(camera, renderer.domElement);
 
-controls.target.set(0, 0, 0); // Point de focus des contrôles
 controls.enableDamping = true; // Activation de l'amortissement pour un mouvement plus fluide
 controls.dampingFactor = 0.1; // Facteur d'amortissement
 controls.rotateSpeed = 0.5; // Vitesse de rotation
 controls.zoomSpeed = 1.0; // Vitesse de zoom
 controls.panSpeed = 0.5; // Vitesse de déplacement latéral
-// document.addEventListener('mousedown', () => {
-//   controls.lock();
-// });
 
-// document.addEventListener('mouseup', () => {
-//   controls.unlock();
-// });
-// 
-// Rotation verticale limitée à entre 45° et 90°
-// controls.minPolarAngle = Math.PI / 2;
-// controls.maxPolarAngle = Math.PI / 2;
-
-// // Rotation horizontale limitée à ±45°
-// controls.minAzimuthAngle = -Math.PI / 2;
-// controls.maxAzimuthAngle = Math.PI / 2;
 
 // Lights
 scene.add(new THREE.AmbientLight(0xffffff, 1));
@@ -68,64 +48,6 @@ scene.add(light);
 const loaderService = new LoaderService();
 const tooltipManager = new TooltipManager(scene, canvas, loaderService);
 
-// {
-//   "x": -263.66568636406544,
-//     "y": 124.69607971772206,
-//       "z": -19.14024539855381
-// }
-
-// {
-//   "x": -300.0694525729905,
-//     "y": 125.64799439483083,
-//       "z": -17.24689430641657
-// }
-
-
-// // GUI configurator
-// const gui = new lilGui.GUI();
-
-// gui.add(camera.position, "x")
-//   .setValue(camera.position.x)
-//   .min(-1000)
-//   .max(1000)
-//   .step(1)
-//   .name("X Position");
-
-// gui.add(camera.position, "y")
-//   .setValue(camera.position.y)
-//   .min(-1000)
-//   .max(1000)
-//   .step(1)
-//   .name("Y Position");
-
-// gui.add(camera.position, "z")
-//   .setValue(camera.position.z)
-//   .min(-1000)
-//   .max(1000)
-//   .step(1)
-//   .name("Z Position");
-
-
-// gui.add(camera.rotation, "x")
-//   .setValue(camera.rotation.x)
-//   .min(-1000)
-//   .max(1000)
-//   .step(1)
-//   .name("X rotation");
-
-// gui.add(camera.rotation, "y")
-//   .setValue(camera.rotation.y)
-//   .min(-1000)
-//   .max(1000)
-//   .step(1)
-//   .name("Y rotation");
-
-// gui.add(camera.rotation, "z")
-//   .setValue(camera.rotation.z)
-//   .min(-1000)
-//   .max(1000)
-//   .step(1)
-//   .name("Z rotation");
 
 // Load GLTF
 const gltfLoader = new GLTFLoader();
@@ -174,11 +96,6 @@ function fitCameraToObject(camera, object, controls) {
   camera.position.set(-643.82, 116.76, 0.63); // Positionne la caméra au-dessus de l'objet
   camera.rotation.set(-0.46, -1.51, -0.46); // Rotation de la caméra
   camera.lookAt(center);
-
-  if (controls) {
-    controls.target.copy(center);
-    controls.update();
-  }
 }
 
 
@@ -231,12 +148,21 @@ renderer.setAnimationLoop(() => {
 });
 
 
+// Events
+
 renderer.domElement.addEventListener('click', handleClick);
 renderer.domElement.addEventListener('mousemove', handleMouseMove);
 
 
 canvas.addEventListener('mousemove', handleMouseMove);
 
+document.addEventListener('mousedown', () => {
+  controls.lock();
+});
+
+document.addEventListener('mouseup', () => {
+  controls.unlock();
+});
 
 
 // Resize
