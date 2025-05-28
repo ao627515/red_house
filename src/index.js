@@ -37,7 +37,12 @@ controls.dampingFactor = 0.1; // Facteur d'amortissement
 controls.rotateSpeed = 0.5; // Vitesse de rotation
 controls.zoomSpeed = 1.0; // Vitesse de zoom
 controls.panSpeed = 0.5; // Vitesse de déplacement latéral
+controls.zoomEnabled = true; // Activation du zoom
+controls.enableZoom = true; // Permet le zoom avec la molette de la souris
+controls.enablePan = true; // Permet le déplacement latéral avec le clic droit de la souris
 
+
+scene.add(controls.object);
 
 // Lights
 scene.add(new THREE.AmbientLight(0xffffff, 1));
@@ -81,7 +86,6 @@ gltfLoader.load(
     document.addEventListener('mouseup', (event) => {
       console.log(camera.position);
       console.log(camera.rotation);
-
     });
   },
   (xhr) => console.log((xhr.loaded / xhr.total * 100) + '% chargé'),
@@ -91,9 +95,10 @@ gltfLoader.load(
 function fitCameraToObject(camera, object, controls) {
   const box = new THREE.Box3().setFromObject(object);
   const center = box.getCenter(new THREE.Vector3(0, 0, 0));
-  console.log('Center of the object:', center);
+  // console.log('Center of the object:', center);
 
-  camera.position.set(-643.82, 116.76, 0.63); // Positionne la caméra au-dessus de l'objet
+  // camera.position.set(-643.82, 116.76, 0.63); // Positionne la caméra au-dessus de l'objet
+  camera.position.set(69.77, 116.76, -117.74); // Positionne la caméra au-dessus de l'objet
   camera.rotation.set(-0.46, -1.51, -0.46); // Rotation de la caméra
   camera.lookAt(center);
 }
@@ -122,7 +127,7 @@ function handleMouseMove(event) {
   updateMouse(event);
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(scene.children, false);
-  console.log(intersects);
+  // console.log(intersects);
 
   const found = intersects.find(i => i.object instanceof THREE.Sprite);
   if (found) {
@@ -131,21 +136,81 @@ function handleMouseMove(event) {
     tooltipElem.style.left = ((p.x + 1) * window.innerWidth / 2) + 'px';
     tooltipElem.textContent = found.object.name;
     tooltipElem.classList.add('is-active');
-    console.log('found');
-
   } else {
     tooltipElem.classList.remove('is-active');
-    console.log('not found');
-
   }
 }
 
 
-// Animation loop
-renderer.setAnimationLoop(() => {
+// Mouvement
+const velocity = new THREE.Vector3();
+const direction = new THREE.Vector3();
+const speed = 100.0;
+
+const keysPressed = {
+  ArrowUp: false,
+  ArrowDown: false,
+  ArrowLeft: false,
+  ArrowRight: false,
+  KeyE: false, // Monter
+  KeyQ: false  // Descendre
+};
+
+// Gestion clavier
+document.addEventListener('keydown', (event) => {
+  keysPressed[event.code] = true;
+});
+
+document.addEventListener('keyup', (event) => {
+  keysPressed[event.code] = false;
+});
+
+const clock = new THREE.Clock();
+
+const animate = () => {
+  const delta = clock.getDelta();
+
+  // Réinitialise les vitesses
+  velocity.set(0, 0, 0);
+
+  // Direction de la caméra
+  const frontVector = new THREE.Vector3(0, 0, Number(keysPressed.ArrowDown) - Number(keysPressed.ArrowUp));
+  const sideVector = new THREE.Vector3(Number(keysPressed.ArrowRight) - Number(keysPressed.ArrowLeft), 0, 0);
+  const verticalVector = new THREE.Vector3(0, Number(keysPressed.KeyE) - Number(keysPressed.KeyQ), 0);
+
+  // Combine
+  direction.addVectors(frontVector, sideVector).normalize();
+
+  // Appliquer la direction dans l’espace de la caméra
+  if (direction.length() > 0) {
+    const move = new THREE.Vector3();
+    controls.getDirection(move); // renvoie un vecteur unitaire vers l’avant
+    move.y = 0;
+    move.normalize();
+    move.multiplyScalar(direction.z * speed * delta);
+
+    const strafe = new THREE.Vector3();
+    strafe.crossVectors(camera.up, move).normalize();
+    strafe.multiplyScalar(direction.x * speed * delta);
+
+    controls.moveRight(strafe.x);
+    controls.moveForward(move.length());
+  }
+
+
+  // Monter / Descendre
+  if (keysPressed.KeyE) {
+    controls.getObject().position.y += speed * delta;
+  }
+  if (keysPressed.KeyQ) {
+    controls.getObject().position.y -= speed * delta;
+  }
   controls.update();
   renderer.render(scene, camera);
-});
+}
+
+// Animation loop
+renderer.setAnimationLoop(animate);
 
 
 // Events
@@ -173,150 +238,45 @@ window.addEventListener('resize', () => {
   console.log('Fenêtre redimensionnée :', window.innerWidth, window.innerHeight);
 });
 
-window.addEventListener('keydown', (event) => {
-  if (event.key === 'f') {
-    // Toggle fullscreen
-    if (!document.fullscreenElement) {
-      canvas.requestFullscreen().catch(err => console.error('Erreur de passage en plein écran :', err));
-    } else {
-      document.exitFullscreen();
-    }
-  }
+// window.addEventListener('keydown', (event) => {
+//   if (event.key === 'f') {
+//     // Toggle fullscreen
+//     if (!document.fullscreenElement) {
+//       canvas.requestFullscreen().catch(err => console.error('Erreur de passage en plein écran :', err));
+//     } else {
+//       document.exitFullscreen();
+//     }
+//   }
 
-  if (event.key === 'r') {
-    // Reset camera position and rotation
-    camera.position.set(0, -100, 0);
-    camera.rotation.set(0, 0, 0);
-    controls.update();
-    console.log('Camera réinitialisée');
-  }
+//   if (event.key === 'r') {
+//     // Reset camera position and rotation
+//     camera.position.set(0, -100, 0);
+//     camera.rotation.set(0, 0, 0);
+//     controls.update();
+//     console.log('Camera réinitialisée');
+//   }
 
-  if (event.key === 'c') {
-    // Toggle camera controls
-    if (controls.enabled) {
-      controls.enabled = false;
-      console.log('Contrôles désactivés');
-    } else {
-      controls.enabled = true;
-      console.log('Contrôles activés');
-    }
-  }
+//   // move camera 
+//   if (event.key === 'ArrowDown') {
+//     camera.position.y -= 1; // Move forward
+//     console.log('Camera moved down');
+//   } else if (event.key === 'ArrowUp') {
+//     camera.position.y += 1; // Move backward
+//     console.log('Camera moved up');
+//   }
+//   // move camera left/right
+//   if (event.key === 'ArrowLeft') {
+//     camera.position.x -= 1; // Move left
+//     console.log('Camera moved left');
+//   } else if (event.key === 'ArrowRight') {
+//     camera.position.x += 1; // Move right
+//     console.log('Camera moved right');
+//   }
 
-
-  if (event.key === 'k') {
-    // Save camera position and rotation to localStorage
-    const cameraData = {
-      position: camera.position.toArray(),
-      rotation: camera.rotation.toArray()
-    };
-    localStorage.setItem('cameraData', JSON.stringify(cameraData));
-    console.log('Position et rotation de la caméra sauvegardées');
-  }
-
-  if (event.key === 'l') {
-    // Load camera position and rotation from localStorage
-    const cameraData = JSON.parse(localStorage.getItem('cameraData'));
-    if (cameraData) {
-      camera.position.fromArray(cameraData.position);
-      camera.rotation.fromArray(cameraData.rotation);
-      // controls.update();
-      console.log('Position et rotation de la caméra chargées');
-    } else {
-      console.warn('Aucune donnée de caméra trouvée dans localStorage');
-    }
-  }
-
-  if (event.key === 'd') {
-    // Toggle debug mode
-    const debugMode = scene.getObjectByName('DebugMode');
-    if (debugMode) {
-      scene.remove(debugMode);
-      console.log('Mode debug désactivé');
-    } else {
-      const debugGeometry = new THREE.BoxGeometry(1, 1, 1);
-      const debugMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
-      const debugCube = new THREE.Mesh(debugGeometry, debugMaterial);
-      debugCube.name = 'DebugMode';
-      scene.add(debugCube);
-      console.log('Mode debug activé');
-    }
-  }
-
-
-
-
-  if (event.key === 'x') {
-    // Toggle axes helper
-    const axesHelper = scene.getObjectByName('AxesHelper');
-    if (axesHelper) {
-      scene.remove(axesHelper);
-      console.log('Axes helper désactivé');
-    } else {
-      const newAxesHelper = new THREE.AxesHelper(5);
-      newAxesHelper.name = 'AxesHelper';
-      scene.add(newAxesHelper);
-      console.log('Axes helper activé');
-    }
-  }
-  if (event.key === 'g') {
-    // Toggle grid helper
-    const gridHelper = scene.getObjectByName('GridHelper');
-    if (gridHelper) {
-      scene.remove(gridHelper);
-      console.log('Grid helper désactivé');
-    } else {
-      const newGridHelper = new THREE.GridHelper(10, 10);
-      newGridHelper.name = 'GridHelper';
-      scene.add(newGridHelper);
-      console.log('Grid helper activé');
-    }
-  }
-
-  if (event.key === 'v') {
-    // Toggle visibility of all objects
-    const objects = scene.children;
-    objects.forEach(object => {
-      object.visible = !object.visible;
-      console.log(`Objet ${object.name} ${object.visible ? 'visible' : 'invisible'}`);
-    });
-  }
-
-  if (event.key === 'z') {
-    // Toggle zoom
-    const zoomEnabled = camera.zoom !== 1;
-    camera.zoom = zoomEnabled ? 1 : 2; // Toggle between normal and zoomed
-    camera.updateProjectionMatrix();
-    console.log(`Zoom ${zoomEnabled ? 'désactivé' : 'activé'}`);
-  }
-  if (event.key === 'y') {
-    // Toggle Y-axis rotation
-    const yRotationEnabled = camera.rotation.y !== 0;
-    camera.rotation.y = yRotationEnabled ? 0 : Math.PI / 4; // Toggle between no rotation and 45 degrees
-    controls.update();
-    console.log(`Rotation Y ${yRotationEnabled ? 'désactivée' : 'activée'}`);
-  }
-
-  // move camera 
-  if (event.key === 'ArrowDown') {
-    camera.position.y -= 1; // Move forward
-    console.log('Camera moved down');
-  } else if (event.key === 'ArrowUp') {
-    camera.position.y += 1; // Move backward
-    console.log('Camera moved up');
-  }
-  // move camera left/right
-  if (event.key === 'ArrowLeft') {
-    camera.position.x -= 1; // Move left
-    console.log('Camera moved left');
-  } else if (event.key === 'ArrowRight') {
-    camera.position.x += 1; // Move right
-    console.log('Camera moved right');
-  }
-
-});
+// });
 
 
 controls.addEventListener('change', () => {
-  console.log('Position de la caméra :', camera.position);
-  console.log('Position de la rotation :', camera.rotation);
+  // console.log('Position de la caméra :', camera.position);
+  // console.log('Position de la rotation :', camera.rotation);
 });
