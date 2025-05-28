@@ -11,6 +11,7 @@ import { TooltipManager } from './services/TooltipManager';
 
 const canvas = document.querySelector('canvas');
 const tooltipElem = document.querySelector('.tooltip');
+
 // Scene
 const scene = new THREE.Scene();
 
